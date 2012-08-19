@@ -1,8 +1,7 @@
-GoPlayer, an HTML5 and Go-based music player
+Lemmy plays music.
 
-I have a large music collection on a machine at home,
-and I want to be able to listen to that music at work.
-This is my solution to that problem.
+Originally based on GoPlayer, the HTML5 and
+Go-based music player by Andrew Gerrand.
 
-Andrew Gerrand <adg@golang.org>
+JGL (yy) <yiyu.jgl@gmail.com>
 

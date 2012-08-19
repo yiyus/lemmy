@@ -20,12 +20,16 @@ const (
 
 var (
 	addr = flag.String("http", ":8080", "http listen address")
-	root = flag.String("root", "/home/flo/nfs/flo/Music/", "music root")
+	root = flag.String("root", os.Getenv("HOME")+"/music/", "music root")
 )
 
 func main() {
 	flag.Parse()
 	http.HandleFunc("/", Index)
+	http.HandleFunc("/lemmy.png", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./lemmy.png")
+		log.Print("lemmy called")
+	})
 	http.HandleFunc(filePrefix, File)
 	http.ListenAndServe(*addr, nil)
 }

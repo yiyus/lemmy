@@ -1,54 +1,51 @@
 <!doctype html>
 <html>
 <head>
-<style>
-body {
-	font-family: sans-serif;
-}
-#browser, #playlist {
-	border-radius: 10px;
-	padding: 5px 5px 3px 5px;
-	width: 300px;
-	float: left;
-	margin-right: 15px;
-	height: 500px;
-	overflow: auto;
-}
-#browser a, #playlist a {
-	display: block;
-	cursor: pointer;
-	padding: 2px 4px;
-	border-radius: 5px;
-	overflow: hidden;
-	margin-bottom: 2px;
-}
-#browser { background: #8C9A20; }
-#browser a.dir { background: #BECD53; color: black; }
-#browser a.file { background: #5A640A; color: white; }
-#playlist { background: #881C46; }
-#playlist a { background: #C44F7C; }
-#playlist a.playing { background: #3B1E6C; color: white; }
-#browser a:hover, #playlist a:hover { background: #200A46; color: white; }
-#controls { margin-top: 10px; }
-#controls a {
-	cursor: pointer;
-	background: #eee;
-	padding: 5px;
-	border-radius: 5px;
-}
-</style>
+<title>Lemmy</title>
 <script src="http://www.google.com/jsapi" type="text/javascript"></script>
 <script type="text/javascript">
 var root = "/f/";
 var path = [];
 var cache = {};
+
 function init() {
 	load(path);
-	$('#player').bind('ended', next);
-	$('#addall').click(addAll);
+	$('#player').bind('ended', function(ev) {
+		var $current = $('#playlist a.playing');
+	 	if ($current.hasClass('error')) $current.removeClass('error');
+		next();
+	});
+	$('#player').bind('play', function(ev) {
+		current = $('#playlist a.playing').data('file').Name;
+		document.title = current;
+		$('#current').text(current).attr('title', 'Pause').click(player.pause);
+	});
+	$('#player').bind('pause', function(ev) {
+		current = '('+$('#playlist a.playing').data('file').Name+')';
+		document.title = current;
+		$('#current').text(current).attr('title', 'Play').click(player.play);
+	});
+	$('#player').bind('error', function(ev) {
+		if($('#player').attr('src') == '')
+			return;
+		var el = $('a.playing');
+		next();
+		if(el.hasClass('error')) {
+			el.remove();
+		} else {
+			el.addClass('error');
+			el.attr('title', 'Error playing '+el.data('file').Path+'/'+el.data('file').Name);
+		}
+	});
 	$('#next').click(next);
 }
+function stop() {
+	player = $('#player').get()[0];
+	player.pause();
+	player.currentTime = 0;
+}
 function load(path)  {
+	$('#browserpath').text(path.join('/'));
 	var url = root+path.join('/');
 	if (typeof cache[url] != "undefined") {
 		populate(cache[url]);
@@ -58,8 +55,9 @@ function load(path)  {
 		url: url,
 		dataType: "json",
 		success: function(data) {
-			populate(data)
+			sort(data);
 			cache[url] = data;
+			populate(data)
 		}
 	});
 }
@@ -67,13 +65,17 @@ function populate(files) {
 	var $b = $('#browser').empty();
 	function add(i, f) {
 		if (f.Name[0] == '.' || f.Name[0] == ':') return;
-    var dir = f.IsDir;
+		var dir = f.IsDir;
 		var cl = dir ? "dir" : "file";
 		f.Path = path.join('/');
-		$('<a></a>').text(f.Name).data('file', f)
+		$('<a></a>').text(f.Name).attr('title', f.Name).data('file', f)
 			.addClass(cl).appendTo($b)
 			.click(dir?clickDir:clickFile);
 	}
+	$b.append(up());
+	$.each(files, add);
+}
+function sort(files) {
 	files.sort(function(a, b) {
 		a = a.Name.toLowerCase();
 		b = b.Name.toLowerCase();
@@ -81,28 +83,70 @@ function populate(files) {
 		if (a < b) return -1;
 		return 0;
 	});
-	$b.append(up());
-	$.each(files, add);
+}
+function dirFiles(dir) {
+	var files = [];
+	var url = root + dir.Path + '/' + dir.Name;
+	if (typeof cache[url] != "undefined") {
+		files = cache[url];
+		return;
+	}
+	$.ajax({
+		url: url,
+		dataType: "json",
+		async: false,
+		success: function(data) {
+			cache[url] = data;
+			files = data;
+		}
+	});
+	return files;
+}
+function addRecursively(e) {
+	var dir = $(e.target).data('file');
+	var files = dirFiles(dir);
+	var p = path.join('/') + '/' + dir.Name;
+	function add(i, f, path) {
+		if (f.Name[0] == '.' || f.Name[0] == ':') return;
+		f.Path = path;
+		if(f.IsDir) {
+			files = dirFiles(f);
+			var p = f.Path + '/' + f.Name;
+			$.each(files, function(i,f) {add(i,f, p)});
+		} else
+			addToPlaylist(f);
+	}
+	$.each(files, function(i,f) {add(i,f, p)});
 }
 function up() {
+	if (path.length == 0)
+		return '';
 	return $('<a class="dir">..</a>').click(function() {
 		path.pop();
 		load(path);
 	});
 }
 function clickDir(e) {
+	if(e.button == 1) {
+		addRecursively(e);
+		return;
+	}
 	path.push($(e.target).data('file').Name);
 	load(path);
 }
 function clickFile(e) {
+	if(e.button == 1) {
+		addAll();
+		return;
+	}
 	addToPlaylist($(e.target).data('file'));
 }
 function addToPlaylist(f) {
 	var $p = $('#playlist');
 	var playnow = ($p.find('a').length == 0);
-	var $d = $('<a></a>').text(f.Name).data('file', f)
+	var $d = $('<a></a>').text(f.Name).attr('title', f.Path+'/'+f.Name).data('file', f)
 		.appendTo($p)
-		.click(function(e) { play(e.target); });
+		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); });
 	if (playnow) $d.click();
 }
 function addAll() {
@@ -119,22 +163,99 @@ function play(el) {
 	$('#player').attr('src', url);
 }
 function next() {
-	var $next = $('#playlist a.playing').next();
+	var $current = $('#playlist a.playing')
+	var $next = $current.next();
 	if ($next.length) play($next);
+	else $current.removeClass('playing');
+}
+function toggle() {
+	player = $('#player').get()[0];
+	if(player.paused) {
+		player.play();
+		return;
+	}
+	player.pause();
 }
 google.load("jquery", "1");
 google.setOnLoadCallback(init);
 </script>
+<style>
+body {
+	font-family: sans-serif;
+}
+#column, #playlist {
+	border-radius: 10px;
+	padding: 5px 5px 3px 5px;
+	width: 48%;
+	float: left;
+	margin-right: 15px;
+}
+#browser a, #playlist a {
+	display: block;
+	height: 1.1em;
+	cursor: pointer;
+	padding: 2px 4px;
+	border-radius: 5px;
+	overflow: hidden;
+	margin-bottom: 2px;
+}
+//#browser { background: #8C9A20; }
+#browser a.dir { font-weight:bold; }
+#browser a { color: black; }
+#credits { color: white; font-size:0.75em; }
+#credits a { color: #f0e9d4; text-decoration:none; }
+#playlist { background: black; }
+#playlist a { color: white; }
+#playlist a.playing { font-weight:bold; }
+#playlist a.error, #playlist a.error:hover {text-decoration: line-through;}
+#browser a:hover { background: black; color: white; }
+#playlist a:hover { background: white; color: black; }
+a {cursor: pointer;}
+</style>
 </head>
-<body>
+<body style="margin:0;">
+<div style="position:fixed;left:0;width:200px;height:100%;background-color:black">
+<img src="/f/lemmy.png">
+<div id="credits" style="position:absolute;bottom:0;margin:2em 0.5ex">
+<a href="http://bitbucket.org/yiyus/lemmy"><b>Lemmy</b></a><br>
+By: <a href="http://yiyus.info">JGL (yy)</a><br>
+Picture: <a href="http://www.markmarek.com/">Mark Marek</a><br>
+2012
+</div>
+</div>
+<div style="position:absolute;left:200px;right:0;margin:1ex">
+<h1 style="text-align: center;"><a id="current" style="display:block;width:100%;" onclick="
+if(event.button == 1){
+next();return;
+}
+toggle();
+">&nbsp;</a></h1>
+<div style="display:block; text-align:center;margin-bottom:1ex;">
+<a onclick="$('#player').get()[0].currentTime = 0;" style="font-size:300%;">&lt;</a>
 <audio id="player" controls autoplay autobuffer>
 <p>What? Your browser doesn't support &lt;audio&gt;?! Lame.</p>
 </audio>
-<div id="browser"></div>
-<div id="playlist"></div>
-<div id="controls">
-<a id="addall">Add all</a>
-<a id="next">Next</a>
+<a id="next" style="font-size:300%;">&gt;</a>
+</div>
+<div id="column" style="position:absolute;left:0;">
+<h3><span id="browserpath"></span></h3>
+<div id="browser" style="overflow:auto;width:100%;min-height:10em"></div>
+<div class="help" style="font-size:0.75em;margin-top:1.5em;color:#666;bottom:0"><table>
+<tr><td><b>Directory</b>:</td><td>B1: Open;</td><td>B2: Add all recursively.</td></tr>
+<tr><td>File:</td><td>B1: Add;</td><td>B2: Add all in the current directory.</td></tr>
+</table></div>
+</div>
+<div id="column" style="position:absolute;right:0;">
+<a onclick="stop(); $('#current').text('&nbsp;'); $('#player').attr('src', ''); $('#playlist a').remove();">Clear</a>
+<a onclick="">Sort</a>
+<a onclick="">Shuffle</a>
+<div id="playlist" style="width:100%; min-height:10em;">
+</div>
+<div class="help" style="font-size:0.75em;margin-top:1.5em;color:#666;bottom:0"><table>
+<tr><td>B1: Play;</td><td>B2: Play next.</td></tr>
+</table></div>
+</div>
+</div>
 </div>
 </body>
 </html>
