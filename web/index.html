@@ -42,7 +42,6 @@ function init() {
 	var $p = $('#toplay');
 	$p.sortable({ axis: 'y' });
 	$p.disableSelection();
-	$('#next').click(next);
 }
 function stop() {
 	player = $('audio').get()[0];
@@ -145,7 +144,7 @@ function up() {
 	if (path.length == 0)
 		return '';
 	d = $('<div id="up"></div>');
-	a = $('<a class="dir" style="width:95%">..</a>').click(function() {
+	a = $('<a class="dir" style="width: 100%; padding: 0.5em 0; margin: 0; text-align: center; border-radius: 0;">..</a>').click(function() {
 		path.pop();
 		load(path);
 	});
@@ -216,9 +215,10 @@ html, body {
     min-height:100%;
     margin: 0;
     padding: 0;
-	font-family: sans-serif;
+    font-family: sans-serif;
+    font-size: 90%;
 }
-#player {
+#playerbar {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -227,26 +227,21 @@ html, body {
 	z-index: 10;
 	background-color: black;
 	color: white;
+	overflow: hidden;
 }
 #controls, #title {
-	position: fixed;
+	float: left;
 	height: 5em;
 }
 #controls {
-	top: 0;
-	left: 0;
-	width: 20em;
+	width: 30%;
+	min-width: 25em;
+	padding: 1em 0;
 }
-#controls audio {
-	margin-top:1em;
-	width: 19em;
-	height: 1em;
+#player {
+	width: 100%;
 }
 #title {
-	top: 0;
-	left: 20em;
-	right: 0;
-	color: white;
 }
 h1 {
 	display: block;
@@ -281,19 +276,20 @@ h1 {
 #playlist, #browser {
 	overflow-y: auto;
 }
-
 #toplay li, #browser a, #filelist a {
 	display: block;
 	line-height: 1em;
 	height: 1em;
 	cursor: pointer;
 	padding: 2px 4px;
-	border-radius: 5px;
 	overflow-x: hidden;
 	margin: 1px 1em;
 	text-decoration: none;
 	font-size: 1.15em;
 	white-space:nowrap;text-overflow:ellipsis;
+}
+#toplay li, #browser a {
+	border-radius: 5px;
 }
 #toplay li:hover, #browser a:hover, #filelist a:hover { background: black; color: white; }
 #browser a { display: inline-block; width:18em; }
@@ -325,7 +321,7 @@ a {cursor: pointer;}
 
 <body style="margin:0;height:100%;">
 
-<div id="player">
+<div id="playerbar">
 	<div id="controls">
 <audio id="player" controls autoplay autobuffer>
 <p>What? Your browser doesn't support &lt;audio&gt;?! Lame.</p>
@@ -349,7 +345,7 @@ a {cursor: pointer;}
 
 <div id="filelist" style="position:fixed;bottom:0;width:100%;height:40%;">
 <h1 style="background:#bbe;"><span name="browser" id="browserpath"></span></h1>
-<div id="browser" style="margin:0.5ex;position:absolute;top:2em;bottom:0;width:100%;"></div>
+<div id="browser" style="position:absolute;top:2em;bottom:0;width:100%;"></div>
 </div>
 
 <div id="credits">
