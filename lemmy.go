@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"path/filepath"
 	"os"
 )
 
@@ -21,26 +22,35 @@ const (
 var (
 	addr = flag.String("http", ":8080", "http listen address")
 	root = flag.String("root", os.Getenv("HOME")+"/music/", "music root")
+	web = flag.String("web", "", "web root")
 )
 
 func main() {
 	flag.Parse()
-	http.HandleFunc("/", Index)
-	http.HandleFunc("/lemmy.png", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./lemmy.png")
-		log.Print("lemmy called")
-	})
+	if *web == "" {
+		web = root
+	}
+	log.Print("root = ", *root)
+	log.Print("web = ", *web)
+	http.HandleFunc("/", Web)
 	http.HandleFunc(filePrefix, File)
 	http.ListenAndServe(*addr, nil)
 }
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./index.html")
-	log.Print("index called")
+func Web(w http.ResponseWriter, r *http.Request) {
+	fn := filepath.Join(*web, r.URL.Path)
+	_, err := os.Stat(fn)
+	log.Print("Web file called: ", fn)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	http.ServeFile(w, r, fn)
 }
 
 func File(w http.ResponseWriter, r *http.Request) {
-	fn := *root + r.URL.Path[len(filePrefix):]
+	fn := filepath.Join(*root, r.URL.Path[len(filePrefix):])
 	fi, err := os.Stat(fn)
 	log.Print("File called: ", fn)
 
