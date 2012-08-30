@@ -42,11 +42,18 @@ function init() {
 			el.attr('title', 'Error playing '+el.data('file').Path+'/'+el.data('file').Name);
 		}
 	});
-	$('#toplay').bind('mouseup', function(ev) {
-		updatenext();
-	});
+	$('#playerbar').click(function(){
+	    $('#pldiv').animate({
+                    scrollTop: $("li.playing").position().top
+                     }, 1000);
+    });
 	var $p = $('#toplay');
-	$p.sortable({ axis: 'y' });
+	$p.sortable({
+	    axis: 'y',
+	    update:  function (event, ui) {
+            updatenext();
+        }
+	});
 	$p.disableSelection();
 }
 function updatenext() {
@@ -273,6 +280,7 @@ h1 {
 	padding-bottom: 0.2em;
 }
 #current {color: White;}
+#current:hover {background: White; color:Black}
 #playlist {
 	position: absolute;
 	top: 0;
@@ -305,7 +313,8 @@ h1 {
 	font-size: 1.15em;
 	white-space:nowrap;text-overflow:ellipsis;
 }
-#toplay li, #browser a {
+#browser a {padding: 2px 4px;}
+#toplay li, #browser a, #title a {
 	border-radius: 5px;
 }
 #toplay li:hover, #browser a:hover, #filelist a:hover { background: black; color: white; }
@@ -355,12 +364,12 @@ a {cursor: pointer;}
 <div id="next" style="position:fixed; top:5em; height:2em; width:100%;
     background:whiteSmoke; border-bottom: solid 1px #ccc; cursor: pointer;
     text-align: center;" onclick="next();" title="Next"></div>
-<div style="position:fixed; top:7em; bottom:40%; width:100%; overflow-y:auto;">
+
+<div id="pldiv" style="position:fixed; top:7em; bottom:40%; width:100%; overflow-y:auto;">
 
 <div id="playlist" class="list">
 <ul id="toplay"></ul>
 </div>
-
 
 </div>
 
