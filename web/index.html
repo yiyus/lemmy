@@ -42,9 +42,21 @@ function init() {
 			el.attr('title', 'Error playing '+el.data('file').Path+'/'+el.data('file').Name);
 		}
 	});
+	$('#toplay').bind('mouseup', function(ev) {
+		updatenext();
+	});
 	var $p = $('#toplay');
 	$p.sortable({ axis: 'y' });
 	$p.disableSelection();
+}
+function updatenext() {
+    	var $next = $('li.playing').next();
+    	if($next.length > 0){
+        	var next = $next.data('file').Name;
+         	$('#next').text(next);
+         	return;
+         }
+         $('#next').text("");
 }
 function stop() {
 	player = $('audio').get()[0];
@@ -98,7 +110,6 @@ function populate(files) {
 	}
 	$b.append(up());
 	$.each(files, add);
-	$('html, body').scrollTop($("#browserpath").offset().top);
 }
 function sort(files) {
 	files.sort(function(a, b) {
@@ -157,6 +168,7 @@ function up() {
 function clickDir(e) {
 	if(e.button == 1) {
 		addRecursively(e);
+    	updatenext();
 		return false;
 	}
 	path.push($(e.target).data('file').Name);
@@ -169,6 +181,7 @@ function clickFile(e) {
 		return false;
 	}
 	addToPlaylist($(e.target).data('file'));
+	updatenext();
 	return false;
 }
 function addToPlaylist(f) {
@@ -193,12 +206,14 @@ function play(el) {
 	$('#toplay li').removeClass('playing').attr('name', '');
 	$(el).addClass('playing').attr('name', 'current');
 	$('audio').attr('src', url);
+	updatenext();
 }
 function next() {
 	var $current = $('li.playing')
 	var $next = $current.next();
 	if ($next.length) play($next);
 	else $current.removeClass('playing');
+	updatenext();
 }
 function toggle() {
 	player = $('audio').get()[0];
@@ -337,7 +352,9 @@ a {cursor: pointer;}
 	</div>
 </div>
 
-<div style="position:fixed; top:5em; height:2em; width:100%; background:whiteSmoke; border-bottom: solid 1px #ccc; cursor: pointer;" onclick="next();" title="Next"></div>
+<div id="next" style="position:fixed; top:5em; height:2em; width:100%;
+    background:whiteSmoke; border-bottom: solid 1px #ccc; cursor: pointer;
+    text-align: center;" onclick="next();" title="Next"></div>
 <div style="position:fixed; top:7em; bottom:40%; width:100%; overflow-y:auto;">
 
 <div id="playlist" class="list">
