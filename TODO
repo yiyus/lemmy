@@ -2,10 +2,10 @@
 1.0	Add recursively
 1.0	--web and /w/
 1.0	Next on error (and delete from playlist (1.1)?)
+1.0	Path links
 
 ------ DONE ------
 
-1.0	Path links
 1.0	Fix js
 1.0	Fix CSS
 1.1	Filter by file type
