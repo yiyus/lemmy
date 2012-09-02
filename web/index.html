@@ -11,6 +11,7 @@ var ntab = 0;
 var shuffle = false;
 var repeat = false;
 var $last;
+var $next;
 
 function init() {
 	$('audio').bind('ended', function(ev) {
@@ -53,7 +54,7 @@ function init() {
 	$('#addfiles').click(addAllFiles);
 	$('#addall').click(addAll);
 	$('#gotocurrent').click(scrollToCurrent);
-//	$('#shuffle').click(toggleShuffle);
+	$('#shuffle').click(toggleShuffle);
 	$('#repeat').click(toggleRepeat);
 	$('#clean').click(clean);
 	var $p = $('#songs');
@@ -61,7 +62,7 @@ function init() {
 		tolerance: 'pointer',
 		axis: 'y',
 		update:  function (event, ui) {
-			updateNext();
+			setNext();
 		}
 	});
 	$('ul').disableSelection();
@@ -140,7 +141,7 @@ function up() {
 function clickDir(e) {
 	if(e.button == 1) {
 		addRecursively(e);
-    	updateNext();
+    	setNext();
 		return false;
 	}
 	path.push($(e.target).data('file').Name);
@@ -153,7 +154,7 @@ function clickFile(e) {
 		return false;
 	}
 	addToPlaylist($(e.target).data('file'));
-	updateNext();
+	setNext();
 	return false;
 }
 function refresh() {
@@ -193,6 +194,14 @@ function addRecursively(e) {
 function scrollToCurrent() {
 	$('#playlist .list').scrollTop($("li.current").position().top);
 }
+function toggleShuffle() {
+	shuffle = !shuffle;
+	if(shuffle)
+		$('#shuffle').removeClass('inactive').addClass('active');
+	else
+		$('#shuffle').removeClass('active').addClass('inactive');
+	setNext();
+}
 function toggleRepeat() {
 	repeat = !repeat;
 	if(repeat)
@@ -204,7 +213,7 @@ function clean() {
 	$('audio').attr('src', '')
 	$('#display #current').text('');
 	$('#songs li').remove();
-	updateNext();
+	setNext();
 }
 function addToPlaylist(f) {
 	var $ul = $('#songs');
@@ -218,13 +227,22 @@ function addToPlaylist(f) {
 		.text('-').click(function(e) {
 			if ($li.hasClass('current')) next();
 			$li.remove();
-			updateNext();
+			setNext();
 		}).prependTo($li);
 	$a.prependTo($li);
 	if (playnow) $li.click();
 }
-function updateNext() {
-	var $next = $('li.current').next();
+function setNext() {
+	if(shuffle) {
+		$songs = $('#songs li');
+		length = $songs.length;
+		$next = $songs.eq(Math.floor(Math.random() * length));
+	} else {
+		$next = $('li.current').next();
+		if($next.length == 0 && repeat) {
+			$next = $('#songs li').first();
+		}
+	}
 	if($next.length > 0) {
 		$('#next').attr('title', $next.attr('title'));
 		return;
@@ -269,7 +287,7 @@ function play(el) {
 	$('#songs li').removeClass('current').attr('name', '');
 	$(el).addClass('current');
 	$('audio').attr('src', url);
-	updateNext();
+	setNext();
 }
 function toggle() {
 	var player = $('audio').get()[0];
@@ -288,7 +306,6 @@ function prev() {
 }
 function next() {
 	var $current = $('li.current');
-	var $next = $current.next();
 	$last = $current;
 	if($last.length > 0)
 		$('#prev').attr('title', $last.attr('title'));
@@ -299,13 +316,9 @@ function next() {
 		return;
 	}
 	$current.removeClass('current');
-	if (repeat && $('#songs').find('li').length > 0) {
-		play($('#songs li').get()[0]);
-		return;
-	}
-	var player = $('audio').attr('src', '').get()[0];
+	var player = $('audio').attr('src', '')[0];
 	$('#display #current').text('');
-	updateNext();
+	setNext();
 }
 google.load("jquery", "1");
 google.load("jqueryui", "1");
