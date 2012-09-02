@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<title>It's supposed to be loud</title>
+<title>It's supposed to be loud!</title>
 <script src="http://www.google.com/jsapi" type="text/javascript"></script>
 <script type="text/javascript">
 var root = "/f/";
@@ -208,6 +208,7 @@ function toggleRepeat() {
 		$('#repeat').removeClass('inactive').addClass('active');
 	else
 		$('#repeat').removeClass('active').addClass('inactive');
+	setNext();
 }
 function clean() {
 	$('audio').attr('src', '')
@@ -219,6 +220,7 @@ function addToPlaylist(f) {
 	var $ul = $('#songs');
 	var playnow = ($ul.find('li').length == 0);
 	var path = f.Path+'/'+f.Name;
+	$('#help').remove();
 	var $li = $('<li></li>').text(f.Name).attr('title', path).data('file', f)
 		.appendTo($ul)
 		.attr('href', path)
@@ -532,6 +534,13 @@ li.dir a:hover {
 	font-size: 0.5em; font-weight: bold;
 	color: #ccc;
 }
+#help {
+	margin: 1em;
+}
+#help a {
+	text-decoration: underline;;
+	color: blue;
+}
 ul {
 	position: relative;
 	padding: 0.5ex; padding-left: 1ex; margin: 0;
@@ -556,7 +565,7 @@ a {
   </audio>
   <div id="display">
     <div id="prev" class="button">&lt;</div>
-    <div id="current"></div>
+    <div id="current">Lemmy</div>
     <div id="next" class="button">&gt;<div id="longernext"></div></div>
   </div>
 </div>
@@ -584,6 +593,29 @@ a {
       --><a id="clean" class="listop" href="#">Clean</a>
     </div>
     <div class="list">
+      <div id="help">
+<a href="http://en.wikipedia.org/wiki/Lemmy">Lemmy</a> plays music.
+<h2>Help</h2>
+<h3>Browser window</h3>
+<p>B1 opens directories and add files to the playlist. B2 on a directory adds its contents to
+the playlist recursively (like <em>Add all</em> and the plus symbol at the left of the directory name).
+B2 on a file adds all the individual files in the current directory to the playlist (<em>Add files</em>).
+</p>
+<h3>Playing</h3>
+<p>A click on the song title pauses / continues the reproduction of that file. The <em>&lt;</em>
+and <em>&gt;</em> symbols are used to play the last played song or the next one.</p>
+<h3>Playlist</h3>
+<p>B1 selects a file and plays it, B2 will play the next file (like the <em>&gt;</em> symbol in
+the player controls). Files can be deleted using the minus symbols at the left of the names.</p>
+<p>If <em>Shuffle</em> is selected files are played in random order. If <em>Repeat</em>
+is selected, they are played continuously, restarting the playlist once it is finished.</p>
+<h2>Source</h2>
+<p>Lemmy is free software:</p>
+<a href="http://bitbucket.org/yiyus/lemmy">http://bitbucket.org/yiyus/lemmy</a>
+<p>Originally based on <a href="https://github.com/nf/goplayer">GoPlayer</a> by Andrew Gerrand.</p>
+<hr>
+<h6>JGL(<a href="http://yiyus.info">yy</a>). 2012</h6>
+     </div>
       <ul id="songs"></ul>
     </div>
   </div>

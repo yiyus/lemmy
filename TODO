@@ -1,27 +1,8 @@
-1.0	README
-1.0	Add recursively
-1.0	--web and /w/
-1.0	Next on error (and delete from playlist (1.1)?)
-1.0	Path links
-
------- DONE ------
-
-1.0	Fix js
-1.0	Fix CSS
-1.1	Filter by file type
-1.1	Display next
-1.1	Path input box
-1.1	Common path in playlist
-1.1	Help
-1.2	Next and Played lists
-1.2	Next with B2
-1.2	Filter by user input
-1.2	Shuffle
-1.2	Path input box autocomplete
-1.3	Delete songs
-1.3	Playlists?
-1.4	http://designmodo.com/audio-player/
-1.4	Iconic font
+Clean up.
+Shuffle mode is naive.
+Load / save playlists.
+List filtering / search.
+Custom player controls?
 
 JGL (yy) <yiyu.jgl@gmail.com>
 
