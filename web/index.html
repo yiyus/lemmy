@@ -10,30 +10,32 @@ var cache = {};
 var ntab = 0;
 
 function init() {
-	load(path);
+	loadfiles();
 	$('audio').bind('ended', function(ev) {
-		var $current = $('li.playing');
+		var $current = $('li.current');
 	 	if ($current.hasClass('error')) $current.removeClass('error');
 		next();
 	});
 	$('audio').bind('play', function(ev) {
-	    var $playing = $('li.playing');
-		var current = $playing.data('file').Name;
-		var title = $playing.attr('title');
-		var $ac = $('#current');
-		document.title = current;
-		$ac.text(current).attr('title', title).click(player.pause);
+	    	var $song = $('li.current');
+		var $display = $('#current');
+		var name = $song.data('file').Name;
+		var title = $song.attr('title');
+		document.title = name;
+		$song.removeClass('stopped');
+		$display.text(name).attr('title', title).removeClass('stopped').click(player.pause);
 	});
 	$('audio').bind('pause', function(ev) {
-		var $ac = $('#current');
-		var title = '('+$ac.text()+')';
-		document.title = title;
-		$('#current').text(title);
+	    	var $song = $('li.current');
+		var $display = $('#current');
+		document.title = '('+$display.text()+')';
+		$song.addClass('stopped');
+		$display.addClass('stopped');
 	});
 	$('audio').bind('error', function(ev) {
 		if($('audio').attr('src') == '')
 			return;
-		var el = $('li.playing');
+		var el = $('li.current');
 		next();
 		if(el.hasClass('error')) {
 			el.remove();
@@ -42,37 +44,49 @@ function init() {
 			el.attr('title', 'Error playing '+el.data('file').Path+'/'+el.data('file').Name);
 		}
 	});
-	$('#playerbar').click(function(){
-	    $('#pldiv').animate({
-                    scrollTop: $("li.playing").position().top
-                     }, 1000);
-    });
-	var $p = $('#toplay');
+	$('#current').click(toggle);
+	$('#next').click(next);
+	$('#filelist .mainop').click(function(){
+		path = [];
+		loadfiles();
+ 	});
+	$('#refresh').click(refresh);
+	$('#addfiles').click(addAllFiles);
+	$('#playlist .mainop').click(function(){
+		$('#playlist .list').scrollTop($("li.current").position().top);
+ 	});
+	var $p = $('#songs');
 	$p.sortable({
-	    axis: 'y',
-	    update:  function (event, ui) {
-            updatenext();
-        }
+		tolerance: 'pointer',
+		axis: 'y',
+		update:  function (event, ui) {
+			updatenext();
+		}
 	});
-	$p.disableSelection();
+	$('ul').disableSelection();
 }
-function updatenext() {
-    	var $next = $('li.playing').next();
-    	if($next.length > 0){
-        	var next = $next.data('file').Name;
-         	$('#next').text(next);
-         	return;
-         }
-         $('#next').text("");
-}
-function stop() {
-	player = $('audio').get()[0];
-	player.pause();
-	player.currentTime = 0;
-}
-function load(path)  {
-//	$('#browserpath').text(path.join('/'));
-	pathlinks(path);
+function loadfiles()  {
+	var $p = $('#parents').empty();
+	var $c = $('#cwd').empty();
+	if(path.length > 0) {
+		$('<a href="javascript:"></a>').html('&nbsp;/').click(function() {
+			path = [];
+			loadfiles();
+		}).appendTo($p);
+	}
+	for (i in path) {
+		if(i == path.length - 1) {
+			$c.text(path[i]).attr('title', path[i]);
+			continue;
+		}
+		$('<a href="javascript:"></a>').text(path[i]+"/").click( (function(ps) {
+			return function() {
+				path = ps;
+				loadfiles();
+			}
+		})(path.slice(0, Number(i) + 1))).appendTo($p);
+	}
+	$c.append('/');
 	var url = root+path.join('/');
 	if (typeof cache[url] != "undefined") {
 		populate(cache[url]);
@@ -88,35 +102,78 @@ function load(path)  {
 		}
 	});
 }
-function pathlinks(p) {
-	var $b = $('#browserpath').empty();
-	$('<a style="padding-left:0.7em"></a>').text("/").click(function() {
-		path = [];
-		load(path);
-	}).appendTo($b);
-	var onclick = [];
-	for (i in p) {
-		$('<a></a>').text(p[i]+"/").click( (function(ps) {
-			return function() {
-				path = ps;
-				load(path);
-			}
-		})(p.slice(0, Number(i) + 1))).appendTo($b);
-	}
-}
 function populate(files) {
-	var $b = $('#browser').empty();
+	var $files = $('#files').empty();
 	function add(i, f) {
 		if (f.Name[0] == '.' || f.Name[0] == ':') return;
 		var dir = f.IsDir;
 		var cl = dir ? "dir" : "file";
 		f.Path = path.join('/');
-		$('<a></a>').text(f.Name).attr('title', f.Name).data('file', f)
-			.attr('href', '#').addClass(cl).appendTo($b)
+		var $li = $('<li></li>').text(f.Name).attr('title', f.Name).data('file', f)
+			.attr('href', '#').addClass(cl).appendTo($files)
 			.click(dir?clickDir:clickFile);
+		if(dir) {
+			var $a = $('<a href="javascript:"></a>').attr('title', 'Add all')
+				.text('+').click(function(e) {
+					e.target = $li;
+					addRecursively(e);
+				}).prependTo($li);
+			$a.prependTo($li);
+		};
 	}
-	$b.append(up());
+	$files.append(up());
 	$.each(files, add);
+	$('#browser').scrollTop(0);
+}
+function up() {
+	if (path.length == 0)
+		return '';
+	var parent = path.slice(0, path.length-1).join('/')+'/'
+	return $('<li>..</li>').attr('title', parent).click(function() {
+		path.pop();
+		loadfiles();
+	});
+}
+function clickDir(e) {
+	if(e.button == 1) {
+		addRecursively(e);
+    	updatenext();
+		return false;
+	}
+	path.push($(e.target).data('file').Name);
+	loadfiles();
+	return false;
+}
+function clickFile(e) {
+	if(e.button == 1) {
+		addAllFiles();
+		return false;
+	}
+	addToPlaylist($(e.target).data('file'));
+	updatenext();
+	return false;
+}
+function addToPlaylist(f) {
+	var $ul = $('#songs');
+	var playnow = ($ul.find('li').length == 0);
+	var path = f.Path+'/'+f.Name;
+	var $d = $('<li></li>').text(f.Name).attr('title', path).data('file', f)
+		.appendTo($ul)
+		.attr('href', path)
+		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
+	if (playnow) $d.click();
+}
+function refresh() {
+	cache = {};
+	loadfiles();
+}
+function updatenext() {
+	var $next = $('li.current').next();
+	if($next.length > 0) {
+		$('#next').attr('title', $next.data('file').Name);
+		return;
+	}
+	$('#next').attr('title', '');
 }
 function sort(files) {
 	files.sort(function(a, b) {
@@ -161,48 +218,8 @@ function addRecursively(e) {
 	}
 	$.each(files, function(i,f) {add(i,f, p)});
 }
-function up() {
-	if (path.length == 0)
-		return '';
-	d = $('<div id="up"></div>');
-	a = $('<a class="dir" style="width: 100%; padding: 0.5em 0; margin: 0; text-align: center; border-radius: 0;">..</a>').click(function() {
-		path.pop();
-		load(path);
-	});
-	a.appendTo(d);
-	return d;
-}
-function clickDir(e) {
-	if(e.button == 1) {
-		addRecursively(e);
-    	updatenext();
-		return false;
-	}
-	path.push($(e.target).data('file').Name);
-	load(path);
-	return false;
-}
-function clickFile(e) {
-	if(e.button == 1) {
-		addAll();
-		return false;
-	}
-	addToPlaylist($(e.target).data('file'));
-	updatenext();
-	return false;
-}
-function addToPlaylist(f) {
-	var $ul = $('#toplay');
-	var playnow = ($ul.find('li').length == 0);
-	var path = f.Path+'/'+f.Name;
-	var $d = $('<li></li>').text(f.Name).attr('title', path).data('file', f)
-		.appendTo($ul)
-		.attr('href', path)
-		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
-	if (playnow) $d.click();
-}
-function addAll() {
-	$('#browser a.file').each(function(i, e) {
+function addAllFiles() {
+	$('#files .file').each(function(i, e) {
 		addToPlaylist($(e).data('file'));
 	});
 }
@@ -210,16 +227,9 @@ function play(el) {
 	var name = $(el).data('file').Name;
 	var path = $(el).data('file').Path;
 	var url = root+path+'/'+name;
-	$('#toplay li').removeClass('playing').attr('name', '');
-	$(el).addClass('playing').attr('name', 'current');
+	$('#songs li').removeClass('current').attr('name', '');
+	$(el).addClass('current');
 	$('audio').attr('src', url);
-	updatenext();
-}
-function next() {
-	var $current = $('li.playing')
-	var $next = $current.next();
-	if ($next.length) play($next);
-	else $current.removeClass('playing');
 	updatenext();
 }
 function toggle() {
@@ -230,156 +240,247 @@ function toggle() {
 	}
 	player.pause();
 }
+function next() {
+	var $current = $('li.current')
+	var $next = $current.next();
+	if ($next.length) play($next);
+	else $current.removeClass('current');
+	updatenext();
+}
 google.load("jquery", "1");
 google.load("jqueryui", "1");
 google.setOnLoadCallback(init);
 </script>
+
 <style>
 html, body {
-    height:100%;
-    min-height:100%;
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    font-size: 90%;
+	position: absolute;
+	width: 100%; height: 100%;
+	min-width: 40em;
+	margin: 0;
+	font-family: sans-serif;
+	font-size: 1.2em;
 }
-#playerbar {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 5em;
-	z-index: 10;
-	background-color: black;
-	color: white;
-	overflow: hidden;
-}
-#controls, #title {
-	float: left;
-	height: 5em;
-}
-#controls {
-	width: 30%;
-	min-width: 25em;
-	padding: 1em 0;
+
+#playing {
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%; height: 4.5em;
+	background: black;
+	line-height: 4.5em; 
 }
 #player {
-	width: 100%;
+	width: 30%; height: 3em;
 }
-#title {
-}
-h1 {
-	display: block;
-	width: 100%;
+#currentctrl {
+	position: absolute;
+	top:0; left:30%;
 	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	font-size:1.2em;
-	margin: 0;
-	padding-top: 0.3em;
-	padding-bottom: 0.2em;
+	width: 70%; height: 4em;
 }
-#current {color: White;}
-#current:hover {background: White; color:Black}
-#playlist {
+#current {
+	float:left;
+	max-width:80%;
+	overflow-x: hidden; white-space: nowrap;text-overflow: ellipsis;
+	font-size: 1.6em; font-weight: bold;
+	cursor: pointer;
+	color: white;
+}
+#current.stopped {
+	color: #999;
+}
+.button {
+	float:left;
+	width: 10%;
+	cursor: pointer;
+	text-align: center; font-size: 3em;
+}
+#currentctrl:hover .button {
+	color: #666;
+}
+#currentctrl:hover .button:hover {
+	color: white;
+}
+#longernext {
 	position: absolute;
 	top: 0;
-	width:100%;
-	min-height:100%;
+	width: 100%; height: 100%;
 }
-#filelist {
-	padding: 0;
+
+#lists {
 	position: absolute;
-	bottom: 0;
+	top: 4.95em; left: 0; right: 0; bottom: 0;
+	font-size: 0.9em;
 }
-#browser 
-{
-	top: 1.2em;
-	bottom: 0;
-	padding-bottom: 2em;
+.listctrl {
+	position: absolute;
+	top: 0em;
+	width: 100%; height: 1.5em;
+	padding: 0; margin: 0;
+	line-height: 1.5em;
+	text-align: right;
+	font-size: 0.9em;
+	background: whitesmoke;
+	border-bottom: solid 1px #ccc;
+	color: #666;
 }
-#playlist, #browser {
+.listctrl a:hover {
+	border-bottom: solid 1px black;
+	color: black;
+}
+.listctrl .mainop {
+	position: absolute;
+	left: 0; right: 20ex;
+	text-align: right;
+}
+.listctrl .listop {
+	display: inline-block;
+	left: 0;
+	width: 10ex; height: 100%;
+	text-align: center;
+}
+.listctrl .active {
+	color:green;
+}
+.list {
+	position: absolute;
+	top: 1.4em; left: 0; bottom: 0;
+	width: 100%;
 	overflow-y: auto;
 }
-#toplay li, #browser a, #filelist a {
-	display: block;
-	line-height: 1em;
-	height: 1em;
-	cursor: pointer;
-	padding: 2px 4px;
-	overflow-x: hidden;
-	margin: 1px 1em;
-	text-decoration: none;
-	font-size: 1.15em;
-	white-space:nowrap;text-overflow:ellipsis;
+.list li:hover {
+	background: #ebeff9;
 }
-#browser a {padding: 2px 4px;}
-#toplay li, #browser a, #title a {
-	border-radius: 5px;
+#filelist {
+	position: absolute;
+	bottom: 0;
+	width: 40%; height: 100%;
 }
-#toplay li:hover, #browser a:hover, #filelist a:hover { background: black; color: white; }
-#filelist a:hover { background:blue }
-#browser a { display: inline-block; width:18em; }
-#browser a.dir { text-decoration: underline; }
-#browser a.dir:hover { text-decoration: none; }
-#browser a { color: blue; }
-a { color: black; text-decoration:none; }
-#toplay li.playing { font-weight:bold; }
-#toplay li.error, #toplay li.error:hover {text-decoration: line-through;}
-#playlist ul {list-style-type: none; margin: 0; padding: 0;}
-#playlist li {margin-bottom: 2px;}
-a {cursor: pointer;}
-#up {-webkit-column-span:all;}
-#fixed a {color:white;}
-#browserpath a { display: inline;width:auto;padding:0.3ex;margin:0; }
-
-#credits {
-	position: fixed;
-	top: 5em;
-	right: 0;
-	z-index: 15;
-	padding: 0.5ex;
-	font-size: 0.7em;
+#path {
+	position: absolute;
+	width:100%; height: 3.2em;
+	background: #ebeff9;
 }
-#credits a {
+#parents {
+	float: right;
+	min-width: 98%; min-height: 1em;
+	margin-right: 1%; padding: 0.3ex;
+	overflow-x: hidden; white-space: nowrap;
+	font-size: 0.8em;
+	color: blue;
+}
+#parents a:hover {
+	text-decoration: underline;
+}
+#cwd {
+	width: 96%;
+	padding: 0 2%; margin: 0;
+	overflow-x: hidden; white-space: nowrap;text-overflow: ellipsis;
+	font-size: 1.2em; font-weight: bold;
+}
+#filelist div.listctrl {
+	top: 3.2em;
+	border-top: solid 1px #ccc;
+}
+#browser.list {
+	top: 4.33em;
+	color: blue;
+}
+#files li.dir {
+	text-decoration: underline;
+}
+#files a {
+	display: inline-block;
+	position: relative;
+	left: -0.5em;
+	width: 1em;
+	text-align: center;
+	font-weight: bold;
+}
+li.file {
+	padding-left: 1.5em;
+}
+li.dir a:hover {
+	background: blue;
 	color: white;
+}
+#playlist {
+	position: absolute;
+	top: 0; left: 40%; right: 0; bottom: 0;
+	border-left: solid 1px #ccc;
+}
+#songs li {
+	font-size: 1.15em;
+	border: solid 1px transparent;
+}
+#songs li:hover {
+	background: whitesmoke;
+	border: solid 1px #ccc;
+}
+#songs .current {
+	font-weight: bold;
+	color: blue;
+}
+#songs .current.stopped {
+	color: black;
+}
+#songs .error, #songs .error:hover {
+	text-decoration: line-through;
+}
+ul {
+	position: relative;
+	padding: 0.5ex; padding-left: 1ex; margin: 0;
+	list-style-type: none;
+}
+li {
+	cursor: pointer;
+	padding-left: 0.5em;
+	overflow-x: hidden; white-space: nowrap;text-overflow: ellipsis;
+}
+a {
+	text-decoration: none;
+	color: inherit;
 }
 </style>
 </head>
+<body>
 
-<body style="margin:0;height:100%;">
-
-<div id="playerbar">
-	<div id="controls">
-<audio id="player" controls autoplay autobuffer>
-<p>What? Your browser doesn't support &lt;audio&gt;?! Lame.</p>
-</audio>
-	</div>
-	<div id="title" class="list">
-<h1 style="padding:1ex;font-size:2em;"><a id="current" onclick="if(event.button == 1){next(); return;}; toggle();">
-</a></h1>
-	</div>
+<div id="playing">
+  <audio id="player" controls autoplay autobuffer>
+    <p>What? Your browser doesn't support &lt;audio&gt;?! Lame.</p>
+  </audio>
+  <div id="currentctrl">
+    <div id="prev" class="button" title="prev">&lt;</div>
+    <div id="current" title="current"></div>
+    <div id="next" class="button" title="next">&gt;<div id="longernext"></div></div>
+  </div>
 </div>
 
-<div id="next" style="position:fixed; top:5em; height:2em; width:100%;
-    background:whiteSmoke; border-bottom: solid 1px #ccc; cursor: pointer;
-    text-align: center;" onclick="next();" title="Next"></div>
-
-<div id="pldiv" style="position:fixed; top:7em; bottom:40%; width:100%; overflow-y:auto;">
-
-<div id="playlist" class="list">
-<ul id="toplay"></ul>
-</div>
-
-</div>
-
-<div id="filelist" style="position:fixed;bottom:0;width:100%;height:40%;">
-<h1 style="background:#EBEFF9;"><span name="browser" id="browserpath"></span></h1>
-<div id="browser" style="position:absolute;top:2em;bottom:0;width:100%;"></div>
-</div>
-
-<div id="credits">
-<a href="http://bitbucket.org/yiyus/lemmy">Lemmy</a>
+<div id="lists">
+  <div id="filelist">
+    <div id="path">
+      <div id="parents"></div>
+      <div id="cwd"></div>
+    </div>
+    <div class="listctrl">
+      <a class="mainop" href="#"><div class="listop" href="#">Root</div></a>
+      <a id="refresh" class="listop" href="#">Refresh</a><!--
+      --><a id="addfiles" class="listop" href="#">Add files</a>
+    </div>
+    <div id="browser" class="list">
+      <ul id="files"></ul>
+    </div>
+  </div>
+  <div id="playlist">
+    <div class="listctrl">
+      <a class="mainop" href="#"><div class="listop" href="#">Current</div></a>
+      <a class="listop" href="#">Shuffle</a><!--
+      --><a class="listop" href="#">Repeat</a>
+    </div>
+    <div class="list">
+      <ul id="songs"></ul>
+    </div>
+  </div>
 </div>
 
 </body>
