@@ -9,6 +9,7 @@ var path = [];
 var cache = {};
 var ntab = 0;
 var shuffle = false;
+var shufflecount = 0;
 var repeat = false;
 var $last;
 var $next;
@@ -196,9 +197,13 @@ function scrollToCurrent() {
 }
 function toggleShuffle() {
 	shuffle = !shuffle;
-	if(shuffle)
+	if(shuffle){
+		shufflecount++;
+		$current = $('li.current');
+		if($current.length > 0)
+			$current.data('shufflecount', shufflecount);
 		$('#shuffle').removeClass('inactive').addClass('active');
-	else
+	} else
 		$('#shuffle').removeClass('active').addClass('inactive');
 	setNext();
 }
@@ -221,9 +226,10 @@ function addToPlaylist(f) {
 	var playnow = ($ul.find('li').length == 0);
 	var path = f.Path+'/'+f.Name;
 	$('#help').remove();
-	var $li = $('<li></li>').text(f.Name).attr('title', path).data('file', f)
+	var $li = $('<li></li>').text(f.Name)
+		.data('file', f).data('shufflecount', 0)
 		.appendTo($ul)
-		.attr('href', path)
+		.attr('href', path).attr('title', path)
 		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
 	var $a = $('<a href="javascript:"></a>').attr('title', 'Delete')
 		.text('-').click(function(e) {
@@ -239,6 +245,20 @@ function setNext() {
 		$songs = $('#songs li');
 		length = $songs.length;
 		$next = $songs.eq(Math.floor(Math.random() * length));
+		$firstnext = $next;
+		while(true) {
+			sc = $next.data('shufflecount');
+			if($next.data('shufflecount') < shufflecount)
+				break;
+			$next = $next.next();
+			if($next.length == 0)
+				$next = $('#songs li').first();
+			isfirst = $next.is($firstnext);
+			if(isfirst) {
+				shufflecount++;
+				break;
+			}
+		}
 	} else {
 		$next = $('li.current').next();
 		if($next.length == 0 && repeat) {
@@ -314,6 +334,7 @@ function next() {
 	else
 		$('#prev').attr('title', '');
 	if ($next.length) {
+		$next.data('shufflecount', shufflecount);
 		play($next);
 		return;
 	}
