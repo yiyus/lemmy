@@ -58,7 +58,7 @@ function init() {
 	$('#shuffle').click(toggleShuffle);
 	$('#repeat').click(toggleRepeat);
 	$('#clean').click(clean);
-	var $p = $('#songs');
+	var $p = $('#tracks');
 	$p.sortable({
 		tolerance: 'pointer',
 		axis: 'y',
@@ -218,11 +218,11 @@ function toggleRepeat() {
 function clean() {
 	$('audio').attr('src', '')
 	$('#display #current').text('');
-	$('#songs li').remove();
+	$('#tracks li').remove();
 	setNext();
 }
 function addToPlaylist(f) {
-	var $ul = $('#songs');
+	var $ul = $('#tracks');
 	var playnow = ($ul.find('li').length == 0);
 	var path = f.Path+'/'+f.Name;
 	$('#help').remove();
@@ -242,9 +242,9 @@ function addToPlaylist(f) {
 }
 function setNext() {
 	if(shuffle) {
-		$songs = $('#songs li');
-		length = $songs.length;
-		$next = $songs.eq(Math.floor(Math.random() * length));
+		$tracks = $('#tracks li');
+		length = $tracks.length;
+		$next = $tracks.eq(Math.floor(Math.random() * length));
 		$firstnext = $next;
 		while(true) {
 			sc = $next.data('shufflecount');
@@ -252,7 +252,7 @@ function setNext() {
 				break;
 			$next = $next.next();
 			if($next.length == 0)
-				$next = $('#songs li').first();
+				$next = $('#tracks li').first();
 			isfirst = $next.is($firstnext);
 			if(isfirst) {
 				shufflecount++;
@@ -262,14 +262,14 @@ function setNext() {
 	} else {
 		$next = $('li.current').next();
 		if($next.length == 0 && repeat) {
-			$next = $('#songs li').first();
+			$next = $('#tracks li').first();
 		}
 	}
 	if($next.length > 0) {
 		$('#next').attr('title', $next.attr('title'));
 		return;
 	}
-	if ($('#songs').find('li').length == 0) {
+	if ($('#tracks').find('li').length == 0) {
 		$last = '';
 		$('#prev').attr('title', '');
 	}
@@ -306,7 +306,7 @@ function play(el) {
 	var name = $(el).data('file').Name;
 	var path = $(el).data('file').Path;
 	var url = root+path+'/'+name;
-	$('#songs li').removeClass('current').attr('name', '');
+	$('#tracks li').removeClass('current').attr('name', '');
 	$(el).addClass('current');
 	$('audio').attr('src', url);
 	setNext();
@@ -491,7 +491,7 @@ html, body {
 #files li.dir {
 	text-decoration: underline;
 }
-#files a, #songs a {
+#files a, #tracks a {
 	display: inline-block;
 	position: relative;
 	left: -0.5em;
@@ -520,31 +520,31 @@ li.dir a:hover {
 #playlist .listctrl .mainop {
 	right: 30ex;
 }
-#songs li {
+#tracks li {
 	font-size: 1.15em;
 	border: solid 1px transparent;
 }
-#songs li:hover {
+#tracks li:hover {
 	background: whitesmoke;
 	border: solid 1px #ccc;
 }
-#songs .current {
+#tracks .current {
 	font-weight: bold;
 	color: blue;
 }
-#songs .current.stopped {
+#tracks .current.stopped {
 	color: black;
 }
-#songs .error, #songs .error:hover {
+#tracks .error, #tracks .error:hover {
 	text-decoration: line-through;
 }
-#songs li a {
+#tracks li a {
 	color: #ccc;
 }
-#songs li:hover a {
+#tracks li:hover a {
 	color: inherit;
 }
-#songs li a:hover {
+#tracks li a:hover {
 	background: black;
 	color: white;
 }
@@ -623,11 +623,12 @@ the playlist recursively (like <em>Add all</em> and the plus symbol at the left 
 B2 on a file adds all the individual files in the current directory to the playlist (<em>Add files</em>).
 </p>
 <h3>Playing</h3>
-<p>A click on the song title pauses / continues the reproduction of that file. The <em>&lt;</em>
-and <em>&gt;</em> symbols are used to play the last played song or the next one.</p>
+<p>A click on the track title pauses / continues the reproduction of that file. The <em>&lt;</em>
+and <em>&gt;</em> symbols are used to play the last played track or the next one.</p>
 <h3>Playlist</h3>
 <p>B1 selects a file and plays it, B2 will play the next file (like the <em>&gt;</em> symbol in
-the player controls). Files can be deleted using the minus symbols at the left of the names.</p>
+the player controls). Files can be deleted using the minus symbols at the left of the names,
+and reordered dragging them to a different position.</p>
 <p>If <em>Shuffle</em> is selected files are played in random order. If <em>Repeat</em>
 is selected, they are played continuously, restarting the playlist once it is finished.</p>
 <h2>Source</h2>
@@ -637,7 +638,7 @@ is selected, they are played continuously, restarting the playlist once it is fi
 <hr>
 <h6>JGL(<a href="http://yiyus.info">yy</a>). 2012</h6>
      </div>
-      <ul id="songs"></ul>
+      <ul id="tracks"></ul>
     </div>
   </div>
 </div>
