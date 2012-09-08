@@ -41,20 +41,21 @@ const (
 var (
 	addr = flag.String("http", ":8080", "http listen address")
 	root = flag.String("root", os.Getenv("HOME")+"/music/", "music root")
-	web = flag.String("web", "", "web root")
+	web string
 )
 
 func main() {
 	flag.Parse()
+	web = os.Getenv("LEMMY_WEB")
 	log.Print("root = ", *root)
-	log.Print("web = ", *web)
+	log.Print("web = ", web)
 	http.HandleFunc("/", Web)
 	http.HandleFunc(filePrefix, File)
 	http.ListenAndServe(*addr, nil)
 }
 
 func Web(w http.ResponseWriter, r *http.Request) {
-	if *web == "" {
+	if web == "" {
 		if r.URL.Path != "/" {
 			http.Error(w, "Not Found", http.StatusNotFound)
 			return
@@ -62,7 +63,7 @@ func Web(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(index));
 		return;
 	}
-	fn := filepath.Join(*web, r.URL.Path)
+	fn := filepath.Join(web, r.URL.Path)
 	_, err := os.Stat(fn)
 	log.Print("Web file called: ", fn)
 
