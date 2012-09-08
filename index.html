@@ -58,21 +58,6 @@ function init() {
 	$('#shuffle').click(toggleShuffle);
 	$('#repeat').click(toggleRepeat);
 	$('#clean').click(clean);
-	$('#filter').bind({
-		'click': function() {$(this).select();},
-		'focus': function() {$(this).css('width', '8em');},
-		'blur': function() {
-			if(this.value == '')
-				$(this).css('width', '1em');
-		},
-		'input': filter,
-		'keyup': function(e) {
-			if(e.keyCode != 27) // Escape
-				return;
-			this.value = '';
-			filter(e);
-		}
-	});
 	var $p = $('#tracks');
 	$p.sortable({
 		tolerance: 'pointer',
@@ -358,15 +343,6 @@ function next() {
 	$('#display #current').text('');
 	setNext();
 }
-function filter(ev) {
-	v = ev.target.value;
-	$('#tracks li').each(function(i,e){
-		if($(e).text().toUpperCase().indexOf(v.toUpperCase()) < 0)
-			$(e).css('display', 'none');
-		else
-			$(e).css('display', 'block');
-	});
-}
 google.load("jquery", "1");
 google.load("jqueryui", "1");
 google.setOnLoadCallback(init);
@@ -572,19 +548,6 @@ li.dir a:hover {
 	background: black;
 	color: white;
 }
-#filter {
-	display: block;
-	position: absolute;
-	top: 0; left: 0;
-	width: 1em;
-	font-size: 1em;
-	background: oldlace; color: #666;
-	border: solid 1px #ccc;
-}
-#filter:hover, #filter:hover {
-	color: black;
-	border: solid 1px black;
-}
 #credits {
 	position: fixed;
 	top: 0.2ex;
@@ -649,7 +612,6 @@ a {
       <a id="shuffle" class="listop inactive" href="#">Shuffle</a><!--
       --><a id="repeat" class="listop inactive" href="#">Repeat</a><!--
       --><a id="clean" class="listop" href="#">Clean</a>
-      <form><input id="filter" title="Filter playlist"></form>
     </div>
     <div class="list">
       <div id="help">
