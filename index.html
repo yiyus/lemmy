@@ -581,8 +581,9 @@ li.dir a:hover {
 	background: oldlace; color: #666;
 	border: solid 1px #ccc;
 }
-#filter:focus {
-	border: none;
+#filter:hover, #filter:hover {
+	color: black;
+	border: solid 1px black;
 }
 #credits {
 	position: fixed;
@@ -648,7 +649,7 @@ a {
       <a id="shuffle" class="listop inactive" href="#">Shuffle</a><!--
       --><a id="repeat" class="listop inactive" href="#">Repeat</a><!--
       --><a id="clean" class="listop" href="#">Clean</a>
-      <form><input id="filter"></form>
+      <form><input id="filter" title="Filter playlist"></form>
     </div>
     <div class="list">
       <div id="help">

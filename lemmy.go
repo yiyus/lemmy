@@ -27,9 +27,6 @@ var (
 
 func main() {
 	flag.Parse()
-	if *web == "" {
-		web = root
-	}
 	log.Print("root = ", *root)
 	log.Print("web = ", *web)
 	http.HandleFunc("/", Web)
@@ -38,6 +35,14 @@ func main() {
 }
 
 func Web(w http.ResponseWriter, r *http.Request) {
+	if *web == "" {
+		if r.URL.Path != "/" {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+		w.Write([]byte(index));
+		return;
+	}
 	fn := filepath.Join(*web, r.URL.Path)
 	_, err := os.Stat(fn)
 	log.Print("Web file called: ", fn)
