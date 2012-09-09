@@ -247,7 +247,7 @@ function addToPlaylist(f) {
 		.attr('title', path)
 		.click(function(e) { if (e.button == 1){ next(); return false;}; play(e.target); return false; });
 	var href = root+f.Path+(f.Path.length > 0 ? '/' : '')+f.Name;
-	$('<a></a>').text(f.Name).attr('href', href).attr('title', f.Name)
+	$('<a></a>').text(f.Name).attr('href', href)
 		.click(function(e){
 			e.target = $li;
 			if (e.button == 1){ next(); return false;}; play(e.target); return false;
