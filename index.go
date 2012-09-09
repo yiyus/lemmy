@@ -32,7 +32,7 @@ function init() {
 		var title = $current.attr('title');
 		document.title = name;
 		$current.removeClass('stopped');
-		$display.text(name).attr('title', title).removeClass('stopped').click(player.pause);
+		$display.text(name).attr('title', title).removeClass('stopped');
 	});
 	$('audio').bind('pause', function(ev) {
 	    	var $current = $('li.current');
@@ -119,16 +119,24 @@ function populate(files) {
 		var dir = f.IsDir;
 		var cl = dir ? "dir" : "file";
 		f.Path = path.join('/');
-		var $li = $('<li></li>').text(f.Name).attr('title', f.Name).data('file', f)
-			.attr('href', '#').addClass(cl).appendTo($files)
+		var $li = $('<li></li>').attr('title', f.Name).data('file', f)
+			.addClass(cl).appendTo($files)
 			.click(dir?clickDir:clickFile);
+		var href = root+f.Path+(f.Path.length > 0 ? '/' : '')+f.Name;
+		$('<a></a>').text(f.Name).attr('href', href).attr('title', f.Name)
+			.click(function(e){
+				e.target = $li;
+				dir?clickDir(e):clickFile(e);
+				return false;
+			})
+			.appendTo($li);
 		if(dir) {
-			var $a = $('<a href="javascript:"></a>').attr('title', 'Add all')
+			$('<a href="javascript:"></a>').attr('title', 'Add all')
+				.addClass('button')
 				.text('+').click(function(e) {
 					e.target = $li;
 					addRecursively(e);
 				}).prependTo($li);
-			$a.prependTo($li);
 		};
 	}
 	$files.append(up());
@@ -139,15 +147,22 @@ function up() {
 	if (path.length == 0)
 		return '';
 	var parent = path.slice(0, path.length-1).join('/')+'/'
-	return $('<li>..</li>').attr('title', parent).click(function() {
-		path.pop();
-		loadFiles();
-	});
+	$li = $('<li></li>').attr('title', parent)
+		.click(function() {
+			path.pop();
+			loadFiles();
+		});
+	var href = root+(parent.length > 1 ? parent : '');
+	$('<a>..</a>').attr('href', href).click(function() {
+		$li.click();
+		return false;
+	}).appendTo($li);
+	return $li;
 }
 function clickDir(e) {
 	if(e.button == 1) {
 		addRecursively(e);
-    	setNext();
+    		setNext();
 		return false;
 	}
 	path.push($(e.target).data('file').Name);
@@ -231,12 +246,20 @@ function addToPlaylist(f) {
 	var playnow = ($ul.find('li').length == 0);
 	var path = f.Path+'/'+f.Name;
 	$('#help').remove();
-	var $li = $('<li></li>').text(f.Name)
+	var $li = $('<li></li>')
 		.data('file', f).data('shufflecount', 0)
 		.appendTo($ul)
-		.attr('href', path).attr('title', path)
-		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
+		.attr('title', path)
+		.click(function(e) { if (e.button == 1){ next(); return false;}; play(e.target); return false; });
+	var href = root+f.Path+(f.Path.length > 0 ? '/' : '')+f.Name;
+	$('<a></a>').text(f.Name).attr('href', href).attr('title', f.Name)
+		.click(function(e){
+			e.target = $li;
+			if (e.button == 1){ next(); return false;}; play(e.target); return false;
+		})
+		.appendTo($li);
 	var $a = $('<a href="javascript:"></a>').attr('title', 'Delete')
+		.addClass('button')
 		.text('-').click(function(e) {
 			if ($li.hasClass('current')) next();
 			$li.remove();
@@ -390,7 +413,7 @@ html, body {
 #current.stopped {
 	color: #999;
 }
-.button {
+#display .button {
 	float:left;
 	width: 10%;
 	cursor: pointer;
@@ -493,10 +516,13 @@ html, body {
 	top: 4.33em;
 	color: blue;
 }
-#files li.dir {
+#files li.dir a {
 	text-decoration: underline;
 }
-#files a, #tracks a {
+#files li.dir a.button {
+	text-decoration: none;
+}
+#files a.button, #tracks a.button {
 	display: inline-block;
 	position: relative;
 	left: -0.5em;
@@ -507,13 +533,13 @@ html, body {
 li.file {
 	padding-left: 1.5em;
 }
-li.dir a {
-	color: #ccc;
-}
 li.dir:hover a {
 	color: inherit;
 }
-li.dir a:hover {
+li.dir a.button {
+	color: #ccc;
+}
+li.dir a.button:hover {
 	background: blue;
 	color: white;
 }
@@ -543,13 +569,13 @@ li.dir a:hover {
 #tracks .error, #tracks .error:hover {
 	text-decoration: line-through;
 }
-#tracks li a {
-	color: #ccc;
-}
 #tracks li:hover a {
 	color: inherit;
 }
-#tracks li a:hover {
+#tracks li a.button {
+	color: #ccc;
+}
+#tracks li a.button:hover {
 	background: black;
 	color: white;
 }
@@ -626,6 +652,7 @@ a {
 <p>B1 opens directories and add files to the playlist. B2 on a directory adds its contents to
 the playlist recursively (like <em>Add all</em> and the plus symbol at the left of the directory name).
 B2 on a file adds all the individual files in the current directory to the playlist (<em>Add files</em>).
+Individual files may be downloaded using the "Save link as..." option.
 </p>
 <h3>Playing</h3>
 <p>A click on the track title pauses / continues the reproduction of that file. The <em>&lt;</em>
