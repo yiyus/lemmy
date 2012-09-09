@@ -27,7 +27,7 @@ function init() {
 		var title = $current.attr('title');
 		document.title = name;
 		$current.removeClass('stopped');
-		$display.text(name).attr('title', title).removeClass('stopped').click(player.pause);
+		$display.text(name).attr('title', title).removeClass('stopped');
 	});
 	$('audio').bind('pause', function(ev) {
 	    	var $current = $('li.current');
@@ -115,7 +115,7 @@ function populate(files) {
 		var cl = dir ? "dir" : "file";
 		f.Path = path.join('/');
 		var $li = $('<li></li>').text(f.Name).attr('title', f.Name).data('file', f)
-			.attr('href', '#').addClass(cl).appendTo($files)
+			.addClass(cl).appendTo($files)
 			.click(dir?clickDir:clickFile);
 		if(dir) {
 			var $a = $('<a href="javascript:"></a>').attr('title', 'Add all')
@@ -230,7 +230,7 @@ function addToPlaylist(f) {
 	var $li = $('<li></li>').text(f.Name)
 		.data('file', f).data('shufflecount', 0)
 		.appendTo($ul)
-		.attr('href', path).attr('title', path)
+		.attr('title', path)
 		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
 	var $a = $('<a href="javascript:"></a>').attr('title', 'Delete')
 		.addClass('button')
