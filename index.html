@@ -119,6 +119,7 @@ function populate(files) {
 			.click(dir?clickDir:clickFile);
 		if(dir) {
 			var $a = $('<a href="javascript:"></a>').attr('title', 'Add all')
+				.addClass('button')
 				.text('+').click(function(e) {
 					e.target = $li;
 					addRecursively(e);
@@ -232,6 +233,7 @@ function addToPlaylist(f) {
 		.attr('href', path).attr('title', path)
 		.click(function(e) { if (e.button == 1){ next(); return;}; play(e.target); return false; });
 	var $a = $('<a href="javascript:"></a>').attr('title', 'Delete')
+		.addClass('button')
 		.text('-').click(function(e) {
 			if ($li.hasClass('current')) next();
 			$li.remove();
@@ -385,7 +387,7 @@ html, body {
 #current.stopped {
 	color: #999;
 }
-.button {
+#display .button {
 	float:left;
 	width: 10%;
 	cursor: pointer;
@@ -502,13 +504,13 @@ html, body {
 li.file {
 	padding-left: 1.5em;
 }
-li.dir a {
-	color: #ccc;
-}
 li.dir:hover a {
 	color: inherit;
 }
-li.dir a:hover {
+li.dir a.button {
+	color: #ccc;
+}
+li.dir a.button:hover {
 	background: blue;
 	color: white;
 }
@@ -538,13 +540,13 @@ li.dir a:hover {
 #tracks .error, #tracks .error:hover {
 	text-decoration: line-through;
 }
-#tracks li a {
-	color: #ccc;
-}
 #tracks li:hover a {
 	color: inherit;
 }
-#tracks li a:hover {
+#tracks li a.button {
+	color: #ccc;
+}
+#tracks li a.button:hover {
 	background: black;
 	color: white;
 }
